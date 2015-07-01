@@ -4,7 +4,6 @@ package tilecone
 // #include <stdlib.h>
 // #include <tilecone/db.h>
 //
-// size_t tile_struct_size = sizeof(struct tile);
 // void *data_at_offset(void *data, size_t offset) {
 //   return (char *)data + offset;
 // }
@@ -17,6 +16,7 @@ import "C"
 
 import (
 	"errors"
+	"runtime"
 	"unsafe"
 )
 
@@ -34,11 +34,16 @@ func NewDB(path string, mmappool int) (*DB, error) {
 		errCStr := C.last_error(db.db)
 		return nil, errors.New(C.GoString(errCStr))
 	}
+	runtime.SetFinalizer(db, func(obj interface{}) { obj.(*DB).Free() })
 	return db, nil
 }
 
-func (db *DB) setTile(x uint64, y uint64, data []byte) error {
-	rc := C.set_tile(db.db, C.uint64_t(x), C.uint64_t(y), unsafe.Pointer(&data), C.size_t(len(data)))
+func (db *DB) Free() {
+	C.free_db(db.db)
+}
+
+func (db *DB) SetTile(x uint64, y uint64, data []byte) error {
+	rc := C.set_tile(db.db, C.uint64_t(x), C.uint64_t(y), unsafe.Pointer(&data[0]), C.size_t(len(data)))
 	if 0 != rc {
 		errCStr := C.last_error(db.db)
 		return errors.New(C.GoString(errCStr))
@@ -46,7 +51,7 @@ func (db *DB) setTile(x uint64, y uint64, data []byte) error {
 	return nil
 }
 
-func (db *DB) getTiles(zoom uint16, x uint64, y uint64) (tiles [][]byte, err error) {
+func (db *DB) GetTiles(zoom uint16, x uint64, y uint64) (tiles [][]byte, err error) {
 	var pData unsafe.Pointer
 	var pTiles *C.struct_tile
 	var lTiles C.size_t
