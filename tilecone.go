@@ -8,7 +8,7 @@ package tilecone
 //   return (char *)data + offset;
 // }
 //
-// struct tile *tile_at_pos(struct tile *data, size_t pos) {
+// struct tc_tile *tile_at_pos(struct tc_tile *data, size_t pos) {
 //   return data + pos;
 // }
 //
@@ -21,7 +21,7 @@ import (
 )
 
 type DB struct {
-	db C.db
+	db C.tc_db
 }
 
 func NewDB(path string, mmappool int) (*DB, error) {
@@ -29,9 +29,9 @@ func NewDB(path string, mmappool int) (*DB, error) {
 	defer C.free(unsafe.Pointer(cpath))
 
 	db := &DB{}
-	db.db = C.new_db(cpath, C.int(mmappool))
-	if 0 == C.db_ok(db.db) {
-		errCStr := C.last_error(db.db)
+	db.db = C.tc_new_db(cpath, C.int(mmappool))
+	if 0 == C.tc_db_ok(db.db) {
+		errCStr := C.tc_last_error(db.db)
 		return nil, errors.New(C.GoString(errCStr))
 	}
 	runtime.SetFinalizer(db, func(obj interface{}) { obj.(*DB).Free() })
@@ -39,13 +39,13 @@ func NewDB(path string, mmappool int) (*DB, error) {
 }
 
 func (db *DB) Free() {
-	C.free_db(db.db)
+	C.tc_free_db(db.db)
 }
 
 func (db *DB) SetTile(x uint64, y uint64, data []byte) error {
-	rc := C.set_tile(db.db, C.uint64_t(x), C.uint64_t(y), unsafe.Pointer(&data[0]), C.size_t(len(data)))
+	rc := C.tc_set_tile(db.db, C.uint64_t(x), C.uint64_t(y), unsafe.Pointer(&data[0]), C.size_t(len(data)))
 	if 0 != rc {
-		errCStr := C.last_error(db.db)
+		errCStr := C.tc_last_error(db.db)
 		return errors.New(C.GoString(errCStr))
 	}
 	return nil
@@ -53,12 +53,12 @@ func (db *DB) SetTile(x uint64, y uint64, data []byte) error {
 
 func (db *DB) GetTiles(zoom uint16, x uint64, y uint64) (tiles [][]byte, err error) {
 	var pData unsafe.Pointer
-	var pTiles *C.struct_tile
+	var pTiles *C.struct_tc_tile
 	var lTiles C.size_t
 
-	rc := C.get_tiles(db.db, C.uint16_t(zoom), C.uint64_t(x), C.uint64_t(y), &pData, &pTiles, &lTiles)
+	rc := C.tc_get_tiles(db.db, C.uint16_t(zoom), C.uint64_t(x), C.uint64_t(y), &pData, &pTiles, &lTiles)
 	if 0 != rc {
-		errCStr := C.last_error(db.db)
+		errCStr := C.tc_last_error(db.db)
 		err = errors.New(C.GoString(errCStr))
 		return
 	}
