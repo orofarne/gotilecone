@@ -73,10 +73,10 @@ func (db *DB) GetTiles(zoom uint16, x uint64, y uint64) (tiles [][]byte, err err
 	return
 }
 
-func (db *DB) BucketZoom() uint64 {
-	return uint64(C.tc_bucket_zoom(db.db))
+func (db *DB) BucketZoom() uint16 {
+	return uint16(C.tc_bucket_zoom(db.db))
 }
 
-func (db *DB) TileZoom() uint64 {
-	return uint64(C.tc_tile_zoom(db.db))
+func (db *DB) TileZoom() uint16 {
+	return uint16(C.tc_tile_zoom(db.db))
 }
