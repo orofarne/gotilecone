@@ -1,6 +1,6 @@
 package tilecone
 
-// #cgo LDFLAGS: -ltilecone
+// #cgo LDFLAGS: -ltilecone_mt
 // #include <stdlib.h>
 // #include <tilecone/db.h>
 //
